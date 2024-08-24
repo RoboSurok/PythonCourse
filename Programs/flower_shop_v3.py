@@ -96,7 +96,6 @@ class OrderManager:
     def start_database(self, lst_flowers, lst_quantity, lst_price):    
         for el in lst_flowers:
             quan, price = r.choice(lst_quantity), r.choice(lst_price)
-            lst.append([el, quan, price])
             manager.add_flower(el, price, quan)
 
     def generate_pseudographics_text(self, text):
@@ -110,10 +109,9 @@ class OrderManager:
             if manager.num_check_false(cnt):
                 manager.error()
                 continue
-            break
-        for el in lst_flowers:
-            lst[lst_flowers.index(el)][1] += int(cnt)
-            manager.restock_flower(el, int(cnt))
+            break                
+        for el in self.flowers:
+            manager.restock_flower(el.name, int(cnt))
 
     def type_restock2(self):
         lst_type = []
@@ -122,6 +120,9 @@ class OrderManager:
                 if manager.num_check_false(num):
                     manager.error()
                     continue
+                if not (1 <= int(num) <= 5):
+                    print(f"\nНужно выбрать число в диапазоне от 1 до 5\nПовторите попытку")
+                    continue
                 break
         for _ in range(int(num)):
             while True:    
@@ -129,19 +130,18 @@ class OrderManager:
                 if flower_cname not in '12345' or flower_cname == '':
                     manager.error()
                     continue
-                if lst[flower_cname-1][0] in lst_type:
+                if self.flowers[int(flower_cname)-1].name in lst_type:
                     print("\nДанный вид цветка уже выбран для пополнения\nВыберите другой вид цветка")
                     continue
                 break
-            lst.append(lst[flower_cname-1][0])
+            lst_type.append(self.flowers[int(flower_cname)-1].name)
             while True:
-                cnt = input(f"\nВведите количество цветов для пополнения склада (Текущий цветок - {lst_flowers[int(flower_cname)-1]})\n: ")
+                cnt = input(f"\nВведите количество цветов для пополнения склада (Текущий цветок - {self.flowers[int(flower_cname)-1].name})\n: ")
                 if manager.num_check_false(cnt):
                     manager.error()
                     continue
                 break
-            lst[flower_cname-1][1] += int(cnt)
-            manager.restock_flower(lst_flowers[int(flower_cname)-1], int(cnt))
+            manager.restock_flower(self.flowers[int(flower_cname)-1].name, int(cnt))
 
     def type_bouquet1(self, name):
         n = Bouquet(name)
@@ -150,27 +150,26 @@ class OrderManager:
             if flower_index not in '12345' or flower_index == '':
                 manager.error()
                 continue
-            if lst[int(flower_index)-1][1] == 0:
+            if self.flowers[int(flower_index)-1].quantity == 0:
                 print("Цветов для выбранного букета нет в наличии, нужно заказать цветы этого вида\nВыберите другой букет")
                 continue
             break
         while True:
-            num_of_flower = input('\nВведите количество цветов для букета\n: ')
+            num_of_flower = input(f'\nВведите количество цветов для букета\n(Имеется в наличии {self.flowers[int(flower_index)-1].quantity} цветов)\n: ')
             if manager.num_check_false(num_of_flower):
                 manager.error()
                 continue
-            if int(num_of_flower) > lst[int(flower_index)-1][1]:
+            if int(num_of_flower) > self.flowers[int(flower_index)-1].quantity:
                 print("\nТакого количетсва цветов нет в наличии\nВыберите меньшее количество цветов")
                 continue
             break
-        lst[int(flower_index)-1][1] -= int(num_of_flower)
-        n.add_flower(manager.flowers[int(flower_index)-1], int(num_of_flower))
-        manager.add_bouquet(n)
+        n.add_flower(self.flowers[int(flower_index)-1], int(num_of_flower))
+        self.add_bouquet(n)
 
     def type_bouquet2(self, name):
         n = Bouquet(name)
         lst_type = []
-        type_flowers = sum([0 if el[1] == 0 else 1 for el in lst])     
+        type_flowers = sum([0 if el.quantity == 0 else 1 for el in self.flowers])     
         while True:
             num = input(f'\nВведите количество видов цветов для букета\n(На складе имеется {type_flowers} видов цветов)\n: ')
             if manager.num_check_false(num):
@@ -186,32 +185,37 @@ class OrderManager:
                 if flower_index not in '12345' or flower_index == '':
                     manager.error()
                     continue
-                if lst[int(flower_index)-1][1] == 0:
+                if self.flowers[int(flower_index)-1].quantity == 0:
                     print("\nВыбранного вида цветка нет в наличии\nВыберите другой цветок")
                     continue
-                if lst[int(flower_index)-1][0] in lst_type:
+                if self.flowers[int(flower_index)-1].name in lst_type:
                     print("\nЦветок уже есть в букете\nВыберите другой цветок")
                     continue
                 break
-            lst_type.append(lst[int(flower_index)-1][0])
+            lst_type.append(self.flowers[int(flower_index)-1].name)
             while True:
-                num_of_flower = input('\nВведите количество цветов для букета\n: ')
+                num_of_flower = input(f'\nВведите количество цветов для букета\n(Выбранный цветок - {self.flowers[int(flower_index)-1].name}, имеется в наличии {self.flowers[int(flower_index)-1].quantity} цветов)\n: ')
                 if manager.num_check_false(num_of_flower):
                     manager.error()
                     continue
-                if int(num_of_flower) > lst[int(flower_index)-1][1]:
+                if int(num_of_flower) > self.flowers[int(flower_index)-1].quantity:
                     print("\nТакого количетсва цветов нет в наличии\nВыберите меньшее количество цветов")
                     continue
                 break
-            lst[int(flower_index)-1][1] -= int(num_of_flower) 
-            n.add_flower(manager.flowers[int(flower_index)-1], int(num_of_flower))
-        manager.add_bouquet(n)             
+            n.add_flower(self.flowers[int(flower_index)-1], int(num_of_flower))
+        self.add_bouquet(n)
+
+    def extra_restock(self):
+        ex_restock = [el.name for el in self.flowers if el.quantity == 0]
+        ex_restock = ', '.join(ex_restock)
+        if len(ex_restock) != 0: 
+            print(f'\nВ наличии нет цветов: {ex_restock}\nНеобходимо пополнить склад')
+                             
 
 manager = OrderManager()
 lst_flowers = ["Роза", "Тюльпан", "Лилия", "Хризантема", "Гвоздика"]
 lst_quantity = [50, 60, 70, 80, 40]
 lst_price = [100, 150, 75, 120, 80]
-lst = []
 cnt_bouquet, cnt_custom_bouquet = 0, 0
 manager.start_database(lst_flowers, lst_quantity, lst_price)
 
@@ -247,7 +251,8 @@ if __name__ == "__main__":
                 manager.type_restock2()
 
         if action == 3:
-            if  not all(map(lambda x: True if x[1] == 0 else False, lst)):
+            if  not all(map(lambda x: True if x.quantity == 0 else False, manager.flowers)):
+                manager.extra_restock()
                 while True:
                     type_bouquet = input("\nВыберите тип букета: \n(1) Стандартный букет\n(2) Произвольный букет\n: ")
                     if type_bouquet not in '12' or type_bouquet == '':
@@ -258,7 +263,7 @@ if __name__ == "__main__":
 
                 if type_bouquet == 1:
                     cnt_bouquet += 1
-                    name = f'Букет {cnt_bouquet}'
+                    name = f'Стандартный букет {cnt_bouquet}'
                     manager.type_bouquet1(name)
 
                 if type_bouquet == 2:
